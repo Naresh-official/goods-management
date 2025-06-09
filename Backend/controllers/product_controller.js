@@ -37,7 +37,7 @@ export const createProduct = async (req, res) => {
 		const product = await Product.createWithHistory({
 			productData,
 			locationId,
-			status
+			status,
 		});
 
 		res.status(201).json(product);
@@ -59,7 +59,7 @@ export const getAllProducts = async (req, res) => {
 			page,
 			itemsperpage,
 			search,
-			manufacturer
+			manufacturer,
 		});
 
 		res.status(200).json(result);

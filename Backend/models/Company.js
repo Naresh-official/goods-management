@@ -27,7 +27,6 @@ export class Company {
         name: rows[0].name,
         description: rows[0].description,
         createdAt: rows[0].created_at,
-        updatedAt: rows[0].updated_at
       };
 
       if (rows[0].created_by_name) {
@@ -66,7 +65,6 @@ export class Company {
         name: row.name,
         description: row.description,
         createdAt: row.created_at,
-        updatedAt: row.updated_at
       };
 
       if (row.created_by_name) {
