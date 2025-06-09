@@ -1,27 +1,22 @@
 import express from "express";
-import CompanyModel from "../models/company_model.js";
+import { Company } from "../models/Company.js";
 import { isAuthenticated } from "../middlewares/user_auth.js";
 
 const companyRouter = express.Router();
 
 companyRouter.get("/", async (req, res, next) => {
   try {
-    const locations = await CompanyModel.find()
-      .populate("createdBy")
-      .populate("editedBy");
-
-    return res.status(200).json(locations || []);
+    const companies = await Company.findAll();
+    return res.status(200).json(companies || []);
   } catch (e) {
     throw next(e);
   }
 });
+
 companyRouter.get("/:id", async (req, res, next) => {
   try {
-    const locations = await CompanyModel.findById(req.params.id)
-      .populate("createdBy")
-      .populate("editedBy");
-
-    return res.status(200).json(locations);
+    const company = await Company.findById(req.params.id);
+    return res.status(200).json(company);
   } catch (e) {
     throw next(e);
   }
@@ -30,14 +25,12 @@ companyRouter.get("/:id", async (req, res, next) => {
 companyRouter.patch("/:id", isAuthenticated, async (req, res, next) => {
   try {
     const { name, description } = req.body;
-    const editedBy = req.user._id;
+    const editedBy = req.user.id;
 
-    await CompanyModel.findByIdAndUpdate(req.params.id, {
-      $set: {
-        name,
-        description,
-        editedBy,
-      },
+    await Company.updateById(req.params.id, {
+      name,
+      description,
+      editedBy,
     });
 
     return res.status(200).json({ message: "Success" });
@@ -49,15 +42,14 @@ companyRouter.patch("/:id", isAuthenticated, async (req, res, next) => {
 companyRouter.post("/", isAuthenticated, async (req, res, next) => {
   try {
     const { name, description } = req.body;
-    const user_id = req.user._id;
+    const createdBy = req.user.id;
 
-    const location = new CompanyModel({
-      createdBy: user_id,
+    await Company.create({
+      createdBy,
       name,
       description,
     });
-
-    await location.save();
+    
     return res.status(200).json({ message: "Success" });
   } catch (e) {
     throw next(e);

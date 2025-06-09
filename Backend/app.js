@@ -1,5 +1,5 @@
 import express from "express";
-import { connectdb } from "./db/user_db.js";
+import { initDatabase } from "./config/database.js";
 import userRouter from "./routes/user_routes.js";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -22,16 +22,18 @@ app.use(
 
 app.use(cookieParser());
 app.use(express.json());
-app.use(express.urlencoded());
-connectdb();
+app.use(express.urlencoded({ extended: true }));
+
+// Initialize database
+initDatabase()
+	.then(() => console.log("Connected to MySQL database"))
+	.catch(console.error);
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/products", productRouter);
 app.use("/api/v1/brands", companyRouter);
 app.use("/api/v1/location", locationRouter);
 app.use("/api/v1/analytics", analyticsRoutes);
-
-app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
 	res.send("<h1>working nicely</h1>");

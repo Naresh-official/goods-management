@@ -1,4 +1,4 @@
-import User from "../models/user_model.js";
+import { User } from "../models/User.js";
 import bcrypt from "bcrypt";
 import { sendcookie } from "../utils/user_utils.js";
 
@@ -11,35 +11,12 @@ export const getAllUsers = async (req, res) => {
 			role, // Role parameter for filtering
 		} = req.query;
 
-		// Define the search query
-		const searchQuery = {
-			$or: [
-				{ name: { $regex: search, $options: "i" } },
-				{ email: { $regex: search, $options: "i" } },
-			],
-		};
-
-		// Include role-based filtering if role parameter is provided
-		if (role) {
-			searchQuery.role = role;
-		}
-
-		// Calculate the number of documents to skip
-		const skipItems = (page - 1) * itemsPerPage;
-
-		// Find users based on search query, role filter, and pagination
-		const users = await User.find(searchQuery)
-			.skip(skipItems)
-			.limit(parseInt(itemsPerPage));
-
-		// Count total number of users for pagination
-		const totalUsers = await User.countDocuments(searchQuery);
-		const totalPages = Math.ceil(totalUsers / itemsPerPage);
+		const result = await User.findAll({ page, itemsPerPage, search, role });
 
 		res.status(200).json({
 			success: true,
-			users,
-			totalPages,
+			users: result.users,
+			totalPages: result.totalPages,
 			currentPage: page,
 		});
 	} catch (error) {
@@ -50,7 +27,8 @@ export const getAllUsers = async (req, res) => {
 export const login = async (req, res, next) => {
 	try {
 		const { email, password } = req.body;
-		const user = await User.findOne({ email }).select("+password");
+		const user = await User.findByEmail(email);
+		
 		if (!user) {
 			return res.status(404).json({
 				success: false,
@@ -74,9 +52,12 @@ export const login = async (req, res, next) => {
 
 export const register = async (req, res, next) => {
 	try {
+		const { name, email, password } = req.body;
 		console.log("Entered here");
-		let user = await User.findOne({ email });
+		
+		let user = await User.findByEmail(email);
 		console.log(user);
+		
 		if (user) {
 			return res.status(400).json({
 				success: false,
@@ -95,11 +76,7 @@ export const register = async (req, res, next) => {
 
 export const getMyprofile = async (req, res, next) => {
 	try {
-		// 2nd method by {Abhisekhsuru}
-		// const { id } = req.query;
-		// const user = await User.findById(id);
-		//without authentication
-		const user = await User.findById(req.user._id);
+		const user = await User.findById(req.user.id);
 		res.status(200).json({
 			success: true,
 			message: `your profile is found ${req.user.name}`,

@@ -1,4 +1,4 @@
-import User from "../models/user_model.js";
+import { User } from "../models/User.js";
 import jwt from "jsonwebtoken";
 
 export const isAuthenticated = async (req, res, next) => {
@@ -12,6 +12,6 @@ export const isAuthenticated = async (req, res, next) => {
 
 	const decode = jwt.verify(token, process.env.SECRET_KEY);
 
-	req.user = await User.findById(decode._id);
+	req.user = await User.findById(decode.id);
 	next();
 };
