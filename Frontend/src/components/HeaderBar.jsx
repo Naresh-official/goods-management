@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import adminLogo from "../assets/admin-logo.svg";
 import userLogo from "../assets/user-logo.svg";
-import axios from "axios";
 
 function HeaderBar({ user }) {
 	const [showMenu, setShowMenu] = useState(false);
@@ -17,45 +16,60 @@ function HeaderBar({ user }) {
 	return (
 		<>
 			{isLoading && (
-				<div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-					<div className="w-16 h-16 border-4 border-t-gray-400 border-b-gray-400 border-r-transparent rounded-full animate-spin"></div>
-					<h2 className="text-white ml-2">Loading please wait...</h2>
+				<div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50">
+					<div className="bg-white rounded-xl p-8 shadow-2xl flex items-center space-x-4">
+						<div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+						<h2 className="text-slate-700 font-medium">
+							Loading please wait...
+						</h2>
+					</div>
 				</div>
 			)}
 			{!isLoading && (
-				<header className="bg-gray-800">
-					<div className="px-6 py-3 bg-white shadow-md grid grid-cols-10 fixed top-0 right-0 left-0 z-10 items-center">
-						<h1 className="text-xl font-semibold col-span-2">
-							Goods Management
-						</h1>
-						<div className="col-span-6"></div>
-						<div className="col-span-2 flex items-center justify-end">
-							<div className="flex items-center">
-								<img
-									src={
-										user.role === "user"
-											? userLogo
-											: adminLogo
-									}
-									alt="User Logo"
-									className="h-10 w-10 rounded-full border-4 border-green-600 bg-green-300 p-1"
-								/>
-								<div className="ml-3">
-									<h3 className="text-lg text-neutral-900 font-semibold">
+				<header className="bg-white min-h-[105px] border-b border-slate-200 shadow-sm">
+					<div className="px-6 py-4 bg-white shadow-sm flex justify-between items-center">
+						<div>
+							<h1 className="text-xl font-bold bg-gradient-to-r from-teal-600 to-teal-700 bg-clip-text text-transparent">
+								Goods Management
+							</h1>
+						</div>
+						<div className="flex items-center justify-end">
+							<div className="flex items-center bg-slate-50 rounded-xl p-3 border border-slate-200 hover:shadow-md transition-all duration-200">
+								<div className="relative">
+									<img
+										src={
+											user.role === "user"
+												? userLogo
+												: adminLogo ||
+												  "/placeholder.svg"
+										}
+										alt="User Avatar"
+										className="h-10 w-10 rounded-full border-2 border-teal-500 bg-teal-50 p-1.5 shadow-sm"
+									/>
+									<div
+										className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+											user.role === "admin"
+												? "bg-red-500"
+												: "bg-teal-500"
+										}`}
+									></div>
+								</div>
+								<div className="ml-3 hidden sm:block">
+									<h3 className="text-sm font-semibold text-slate-800 capitalize">
 										{user.name}
 									</h3>
-									<span className="text-sm text-neutral-500">
-										{user.email}
+									<span className="text-xs text-slate-500 ">
+										{user.role} • {user.email}
 									</span>
 								</div>
 							</div>
 							<button
-								className="ml-4 text-neutral-100 hover:text-white"
+								className="ml-3 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all duration-200"
 								onClick={handleMenuClick}
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
-									className="h-6 w-6"
+									className="h-5 w-5"
 									fill="none"
 									viewBox="0 0 24 24"
 									stroke="currentColor"

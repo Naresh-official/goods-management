@@ -1,19 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { useOutletContext, useParams } from "react-router-dom";
-import axios from "axios"; // Import Axios
-import ShowSuccessMesasge from "../../components/ShowSuccessMesasge";
-import { SERVER_URL } from "../../router";
+"use client"
+
+import { useEffect, useState } from "react"
+import { useOutletContext, useParams } from "react-router-dom"
+import axios from "axios"
+import ShowSuccessMesasge from "../../components/ShowSuccessMesasge"
+import LoadingIndicator from "../../components/LoadingIndicator"
+import { SERVER_URL } from "../../router"
 
 function ProductEditScreen() {
-  const params = useParams();
-  const [isLoading, seELoading] = useState(false);
-  const [isError, setError] = useState(null);
-  const [isSuccess, setSuccess] = useState(false);
+  const params = useParams()
+  const [isLoading, setLoading] = useState(true)
+  const [isSubmitting, setSubmitting] = useState(false)
+  const [isError, setError] = useState(null)
+  const [isSuccess, setSuccess] = useState(false)
 
-  const [allLocations, setAllLocations] = useState([]);
-  const [manufacturer, setManufacturer] = useState([]);
+  const [allLocations, setAllLocations] = useState([])
+  const [manufacturer, setManufacturer] = useState([])
 
-  const [data] = useOutletContext();
+  const [data] = useOutletContext()
   const [formData, setFormData] = useState({
     createdBy: data.user._id,
     locationId: "",
@@ -28,74 +32,59 @@ function ProductEditScreen() {
     warrantyMonths: "",
     user: "department",
     dateOfPurchase: "",
-  });
+  })
 
   useEffect(() => {
-    getProductInfo();
-  }, [params.id]);
+    getProductInfo()
+  }, [params.id])
+
   const getProductInfo = async () => {
     try {
-      seELoading(true);
-      const manufacturersRes = await axios.get(
-        `${SERVER_URL}/api/v1/brands`
-      );
-      const locationsRes = await axios.get(
-        `${SERVER_URL}/api/v1/location`
-      );
-      setAllLocations(locationsRes.data);
-      setManufacturer(manufacturersRes.data);
-      if (locationsRes.data.length > 0 && manufacturersRes.data.length > 0) {
-        setFormData({
-          ...formData,
-          manufacturer: manufacturersRes.data[0]._id,
-          locationId: locationsRes.data[0]._id,
-        });
-      }
+      setLoading(true)
+      const manufacturersRes = await axios.get(`${SERVER_URL}/api/v1/brands`)
+      const locationsRes = await axios.get(`${SERVER_URL}/api/v1/location`)
+      setAllLocations(locationsRes.data)
+      setManufacturer(manufacturersRes.data)
 
-      const { data, status } = await axios.get(
-        `${SERVER_URL}/api/v1/products/${params.id}`,
-        {
-          withCredentials: true, // Change "include" to true
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(data);
+      const { data: productData, status } = await axios.get(`${SERVER_URL}/api/v1/products/${params.id}`, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
       if (status === 200) {
-        const id = formData.createdBy;
-
         setFormData({
-          ...data,
-          createdBy: id,
-        });
+          ...productData,
+          createdBy: data.user._id,
+        })
       } else {
-        throw new Error(data.error);
+        throw new Error(productData.error)
       }
     } catch (error) {
-      setError("Error while fetching product information");
-      console.error(error);
+      setError("Error while fetching product information")
+      console.error(error)
     } finally {
-      seELoading(false); // Set loading state to false
+      setLoading(false)
     }
-  };
+  }
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData({ ...formData, [name]: value });
-  };
+    const { name, value, type, checked } = e.target
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Add form submission logic here
-    console.log(formData);
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    setSuccess(false)
 
     try {
-      if (isError) setError(false);
-      if (isSuccess) setSuccess(false);
-
-      const { data, status } = await axios.put(
+      const { data: responseData, status } = await axios.put(
         `${SERVER_URL}/api/v1/products/${formData._id}`,
         formData,
         {
@@ -103,288 +92,338 @@ function ProductEditScreen() {
           headers: {
             "Content-Type": "application/json",
           },
-        }
-      );
+        },
+      )
 
       if (status === 200) {
-        setSuccess(true);
-        alert("Product updated");
-      }
-      if (status === 404 || status === 400) {
-        throw new Error(data.error);
+        setSuccess(true)
+      } else {
+        throw new Error(responseData.error)
       }
     } catch (e) {
-      setError("Error while addin new item");
-      console.log(e);
+      setError("Error while updating product")
+      console.log(e)
     } finally {
-      seELoading(false);
+      setSubmitting(false)
     }
-  };
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-full bg-slate-50">
+        <div className="px-8 py-6">
+          <LoadingIndicator />
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="m-5">
-      <h1 className="text-3xl font-semibold text-neutral-900">
-        Edit Product
-      </h1>
-      {isError && <div className="text-red-500">{isError}</div>}
-      {isSuccess && <div className="text-green-500">{"Updated successfully"}</div>}
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Title
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Description
-            </label>
-            <input
-              type="text"
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="serialNo"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Serial Number
-            </label>
-            <input
-              type="text"
-              id="serialNo"
-              name="serialNo"
-              value={formData.serialNo}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="rackMountable"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Rack Mountable
-            </label>
-            <select
-              id="rackMountable"
-              name="rackMountable"
-              value={formData.rackMountable}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            >
-              <option value={true}>Yes</option>
-              <option value={false}>No</option>
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="isPart"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Is Part
-            </label>
-            <select
-              id="isPart"
-              name="isPart"
-              value={formData.isPart}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            >
-              <option value={true}>Yes</option>
-              <option value={false}>No</option>
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="manufacturer"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Manufacturer
-            </label>
-            <select
-              type="text"
-              id="manufacturer"
-              name="manufacturer"
-              value={formData.manufacturer}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            >
-              {manufacturer.map((man) => (
-                <option value={man._id}>{man.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="location"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Location / Sector
-            </label>
-            <select
-              type="text"
-              id="locationId"
-              name="locationId"
-              value={formData.locationId}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            >
-              {allLocations.map((loc) => (
-                <option value={loc._id}>{loc.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="model"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Model
-            </label>
-            <input
-              type="text"
-              id="model"
-              name="model"
-              value={formData.model}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="warrantyMonths"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Warranty Months
-            </label>
-            <input
-              type="number"
-              id="warrantyMonths"
-              name="warrantyMonths"
-              value={formData.warrantyMonths}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="user"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              User
-            </label>
-            <select
-              id="user"
-              name="user"
-              value={formData.user}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            >
-              <option value="department">Department</option>
-              <option value="admin">Admin</option>
-              <option value="normal user">Normal User</option>
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="user"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Status
-            </label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            >
-              <option value="repair">Repair</option>
-              <option value="not in use">Not In Use </option>
-              <option value="in use">In Use</option>
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="dateOfPurchase"
-              className="block text-lg font-semibold text-neutral-800 mb-1"
-            >
-              Date of Purchase
-            </label>
-            <input
-              type="datetime-local"
-              id="dateOfPurchase"
-              name="dateOfPurchase"
-              value={formData.dateOfPurchase.split('Z')[0]}
-              onChange={handleChange}
-              className="border border-neutral-500 rounded-md px-3 py-2 w-full outline-none"
-              required
-            />
-          </div>
+    <div className="min-h-full bg-slate-50">
+      <div className="px-8 py-6">
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">Edit Product</h1>
+          <p className="text-slate-600">Update product information and details</p>
         </div>
-        <button
-          type="submit"
-          className="mt-4 px-4 py-2 bg-teal-500 text-white font-semibold rounded-md hover:bg-teal-600 transition duration-300"
-          disabled={isLoading}
-        >
-          {isLoading ? "Adding..." : "Update Product"}
-        </button>
-      </form>
-      <br />
-      {isSuccess && (
-        <ShowSuccessMesasge
-          children={
-            <div className="text-gray-900 text-lg">
-              {"Updated Successfully"}
+
+        {/* Alert Messages */}
+        {isError && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-800">{isError}</p>
+              </div>
             </div>
-          }
-        />
-      )}
+          </div>
+        )}
+
+        {isSuccess && (
+          <div className="mb-6">
+            <ShowSuccessMesasge>
+              <div className="text-teal-800 font-medium">Product updated successfully!</div>
+            </ShowSuccessMesasge>
+          </div>
+        )}
+
+        {/* Form Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+          <div className="px-6 py-4 border-b border-slate-200">
+            <h2 className="text-lg font-semibold text-slate-800">Product Information</h2>
+            <p className="text-sm text-slate-600 mt-1">Update the product details below</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Title */}
+              <div className="lg:col-span-2">
+                <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-2">
+                  Product Title *
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div className="lg:col-span-2">
+                <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-2">
+                  Description *
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={3}
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                />
+              </div>
+
+              {/* Serial Number */}
+              <div>
+                <label htmlFor="serialNo" className="block text-sm font-medium text-slate-700 mb-2">
+                  Serial Number *
+                </label>
+                <input
+                  type="text"
+                  id="serialNo"
+                  name="serialNo"
+                  value={formData.serialNo}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 font-mono"
+                  required
+                />
+              </div>
+
+              {/* Model */}
+              <div>
+                <label htmlFor="model" className="block text-sm font-medium text-slate-700 mb-2">
+                  Model *
+                </label>
+                <input
+                  type="text"
+                  id="model"
+                  name="model"
+                  value={formData.model}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                />
+              </div>
+
+              {/* Manufacturer */}
+              <div>
+                <label htmlFor="manufacturer" className="block text-sm font-medium text-slate-700 mb-2">
+                  Manufacturer *
+                </label>
+                <select
+                  id="manufacturer"
+                  name="manufacturer"
+                  value={formData.manufacturer}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                >
+                  {manufacturer.map((man) => (
+                    <option key={man._id} value={man._id}>
+                      {man.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label htmlFor="locationId" className="block text-sm font-medium text-slate-700 mb-2">
+                  Location / Sector *
+                </label>
+                <select
+                  id="locationId"
+                  name="locationId"
+                  value={formData.locationId}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                >
+                  {allLocations.map((loc) => (
+                    <option key={loc._id} value={loc._id}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Warranty Months */}
+              <div>
+                <label htmlFor="warrantyMonths" className="block text-sm font-medium text-slate-700 mb-2">
+                  Warranty (Months) *
+                </label>
+                <input
+                  type="number"
+                  id="warrantyMonths"
+                  name="warrantyMonths"
+                  value={formData.warrantyMonths}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                />
+              </div>
+
+              {/* Purchase Date */}
+              <div>
+                <label htmlFor="dateOfPurchase" className="block text-sm font-medium text-slate-700 mb-2">
+                  Date of Purchase *
+                </label>
+                <input
+                  type="datetime-local"
+                  id="dateOfPurchase"
+                  name="dateOfPurchase"
+                  value={formData.dateOfPurchase.split("Z")[0]}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                />
+              </div>
+
+              {/* User */}
+              <div>
+                <label htmlFor="user" className="block text-sm font-medium text-slate-700 mb-2">
+                  Assigned User *
+                </label>
+                <select
+                  id="user"
+                  name="user"
+                  value={formData.user}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                >
+                  <option value="department">Department</option>
+                  <option value="admin">Admin</option>
+                  <option value="normal user">Normal User</option>
+                </select>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-2">
+                  Status *
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+                  required
+                >
+                  <option value="repair">Repair</option>
+                  <option value="not in use">Not In Use</option>
+                  <option value="in use">In Use</option>
+                </select>
+              </div>
+
+              {/* Checkboxes */}
+              <div className="lg:col-span-2">
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <input
+                      id="rackMountable"
+                      name="rackMountable"
+                      type="checkbox"
+                      checked={formData.rackMountable}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-slate-300 rounded"
+                    />
+                    <label htmlFor="rackMountable" className="ml-2 block text-sm text-slate-700">
+                      Rack Mountable
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      id="isPart"
+                      name="isPart"
+                      type="checkbox"
+                      checked={formData.isPart}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-slate-300 rounded"
+                    />
+                    <label htmlFor="isPart" className="ml-2 block text-sm text-slate-700">
+                      Is Part/Component
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="mt-8 flex justify-end">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Updating Product...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      />
+                    </svg>
+                    Update Product
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
 
-{
-  /* <button
-disabled={isLoading}
-type="submit"
-className="bg-slate-500 text-white px-4 py-2 rounded hover:bg-slate-600"
->
-{isLoading
-  ? "Upadating in progress please wait "
-  : " Update Product info"}
-</button> */
-}
-
-export default ProductEditScreen;
+export default ProductEditScreen

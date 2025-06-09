@@ -1,232 +1,302 @@
-import React, { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { MdSearch } from "react-icons/md";
 import LoadingIndicator from "../../components/LoadingIndicator";
-import { ImEqualizer } from "react-icons/im";
 import { Link, NavLink, useOutletContext } from "react-router-dom";
 import { SERVER_URL } from "../../router";
 
 function ProductsScreen() {
-  const [isLoading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [products, setProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [error, setError] = useState(null);
+	const [isLoading, setLoading] = useState(true);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [itemsPerPage, setItemsPerPage] = useState(10);
+	const [totalPages, setTotalPages] = useState(0);
+	const [products, setProducts] = useState([]);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [currentPage, itemsPerPage, searchTerm]);
+	useEffect(() => {
+		fetchData();
+	}, [currentPage, itemsPerPage, searchTerm]);
 
-  async function fetchData() {
-    try {
-      const response = await axios.get(
-        `${SERVER_URL}/api/v1/products`,
-        {
-          params: {
-            page: currentPage,
-            itemsperpage: itemsPerPage,
-            search: searchTerm,
-          },
-        }
-      );
-      setProducts(response.data.data);
-      setTotalPages(response.data.pages_count);
-      setLoading(false);
-    } catch (error) {
-      setError(error.message);
-      setLoading(false);
-    }
-  }
+	async function fetchData() {
+		try {
+			const response = await axios.get(`${SERVER_URL}/api/v1/products`, {
+				params: {
+					page: currentPage,
+					itemsperpage: itemsPerPage,
+					search: searchTerm,
+				},
+			});
+			setProducts(response.data.data);
+			setTotalPages(response.data.pages_count);
+			setLoading(false);
+		} catch (error) {
+			setError(error.message);
+			setLoading(false);
+		}
+	}
 
-  function handlePrevPage() {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  }
+	function handlePrevPage() {
+		if (currentPage > 1) {
+			setCurrentPage(currentPage - 1);
+		}
+	}
 
-  function handleNextPage() {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  }
+	function handleNextPage() {
+		if (currentPage < totalPages) {
+			setCurrentPage(currentPage + 1);
+		}
+	}
 
-  return (
-    <div className="m-5">
-      <div>
-        <h1 className="text-3xl font-semibold text-neutral-900">Products</h1>
-        <p className="text-lg text-neutral-600">
-          Here are the products created by you!
-        </p>
-      </div>
-      <br />
-      <div className="flex gap-3 items-center justify-between">
-        <div className="flex gap-4">
-          <input
-            type="text"
-            className="outline-none px-3 py-1 border-neutral-500 border-2 rounded-md text-lg"
-            placeholder="Search products"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {/* <div className="flex w-min gap-2 items-center text-lg font-semibold text-neutral-800 hover:bg-teal-50 hover:text-teal-800 px-4 py-1 border rounded-md">
-            <ImEqualizer />
-            <span>Filter</span>
-          </div> */}
-        </div>
-        <NavLink
-          className={
-            "text-lg font-semibold text-neutral-800 hover:bg-teal-50 hover:text-teal-800 px-4 py-1 border rounded-md"
-          }
-          to={"new"}
-        >
-          Create Product
-        </NavLink>
-      </div>
-      <br />
+	return (
+		<div className="min-h-full bg-slate-50">
+			<div className="px-8 py-6">
+				{/* Header Section */}
+				<div className="mb-8">
+					<h1 className="text-3xl font-bold text-slate-800 mb-2">
+						Products
+					</h1>
+					<p className="text-slate-600">
+						Manage and track all your inventory items
+					</p>
+				</div>
 
-      <div className="border rounded-md border-neutral-700">
-        <div className="overflow-x-auto">
-          <table className="table-auto w-full border-collapse">
-            <thead className="border-b text-left">
-              <tr>
-                <th className="px-4 py-2">DETAILS</th>
-                <th className="px-4 py-2">SERIAL NUMBER</th>
-                <th className="px-4 py-2">USED BY</th>
-                <th className="px-4 py-2">isPart</th>
-                <th className="px-4 py-2">RACKMOUNTABLE</th>
-                <th className="px-4 py-2">DATE OF PURCHASE</th>
-                <th className="px-4 py-2">MODEL</th>
-                <th className="px-4 py-2">WARRANTY</th>
-                <th className="px-4 py-2">HISTORY</th>
-                <th className="px-4 py-2">ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan="5" className="px-4 py-2 text-center">
-                    <LoadingIndicator />
-                  </td>
-                </tr>
-              ) : (
-                products.map((product, idx) => (
-                  <ProductRow
-                    key={product._id}
-                    index={idx}
-                    product={product}
-                    itemsPerPage={itemsPerPage}
-                    currentPage={currentPage}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-          <div className="flex items-center justify-between py-2 mx-5">
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={1}
-                className="border rounded-md aspect-square w-10 text-center"
-                value={itemsPerPage}
-                onChange={(e) => setItemsPerPage(e.target.value)}
-              />
-              <h5>Per Page</h5>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handlePrevPage}
-                disabled={currentPage === 1}
-                className="flex gap-2 items-center border rounded-md py-1 text-lg font-semibold px-3 hover:bg-teal-50 hover:text-teal-700 text-center"
-              >
-                <IoIosArrowBack />
-                <span>Prev</span>
-              </button>
-              <input
-                type="number"
-                min={1}
-                className="border rounded-md aspect-square w-10 text-center"
-                value={currentPage}
-                onChange={(e) => setCurrentPage(e.target.value)}
-              />
-              <button
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-                className="flex gap-2 items-center border rounded-md py-1 text-lg font-semibold px-3 hover:bg-teal-50 hover:text-teal-700 text-center"
-              >
-                <span>Next</span>
-                <IoIosArrowForward />
-              </button>
-              <h6>Total {totalPages} pages</h6>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+				{/* Controls Section */}
+				<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+					<div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+						<div className="flex flex-col sm:flex-row gap-4 flex-1">
+							<div className="relative flex-1 max-w-md">
+								<MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-lg" />
+								<input
+									type="text"
+									className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
+									placeholder="Search products..."
+									value={searchTerm}
+									onChange={(e) =>
+										setSearchTerm(e.target.value)
+									}
+								/>
+							</div>
+						</div>
+						<NavLink
+							to="new"
+							className="inline-flex items-center px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
+						>
+							<svg
+								className="w-4 h-4 mr-2"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M12 4v16m8-8H4"
+								/>
+							</svg>
+							Create Product
+						</NavLink>
+					</div>
+				</div>
+
+				{/* Table Section */}
+				<div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-slate-200">
+							<thead className="bg-slate-50">
+								<tr>
+									<th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+										Product Details
+									</th>
+									<th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+										Serial Number
+									</th>
+									<th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+										Used By
+									</th>
+									<th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+										Type
+									</th>
+									<th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+										Purchase Date
+									</th>
+									<th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+										Warranty
+									</th>
+									<th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+										History
+									</th>
+									<th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+										Actions
+									</th>
+								</tr>
+							</thead>
+							<tbody className="bg-white divide-y divide-slate-100">
+								{isLoading ? (
+									<tr>
+										<td
+											colSpan="8"
+											className="px-6 py-12 text-center"
+										>
+											<LoadingIndicator />
+										</td>
+									</tr>
+								) : (
+									products.map((product, idx) => (
+										<ProductRow
+											key={product._id}
+											index={idx}
+											product={product}
+											itemsPerPage={itemsPerPage}
+											currentPage={currentPage}
+										/>
+									))
+								)}
+							</tbody>
+						</table>
+					</div>
+
+					{/* Pagination */}
+					<div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center space-x-3">
+								<label className="text-sm font-medium text-slate-700">
+									Items per page:
+								</label>
+								<select
+									value={itemsPerPage}
+									onChange={(e) =>
+										setItemsPerPage(e.target.value)
+									}
+									className="border border-slate-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+								>
+									<option value={5}>5</option>
+									<option value={10}>10</option>
+									<option value={25}>25</option>
+									<option value={50}>50</option>
+								</select>
+							</div>
+							<div className="flex items-center space-x-4">
+								<button
+									onClick={handlePrevPage}
+									disabled={currentPage === 1}
+									className="inline-flex items-center px-3 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+								>
+									<IoIosArrowBack className="mr-1" />
+									Previous
+								</button>
+								<span className="text-sm text-slate-700">
+									Page{" "}
+									<span className="font-medium">
+										{currentPage}
+									</span>{" "}
+									of{" "}
+									<span className="font-medium">
+										{totalPages}
+									</span>
+								</span>
+								<button
+									onClick={handleNextPage}
+									disabled={currentPage === totalPages}
+									className="inline-flex items-center px-3 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+								>
+									Next
+									<IoIosArrowForward className="ml-1" />
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export function ProductRow({ product, index, currentPage, itemsPerPage }) {
-  // console.log(product)
-  const [_, user] = useOutletContext();
-  return (
-    <tr className="border-b hover:bg-teal-50 hover:text-teal-700">
-      <td className="px-4 py-2 flex gap-3 items-center">
-        <h1 className="font-semibold ">
-          {index + 1 + (currentPage - 1) * itemsPerPage}
-        </h1>
-        <div className="px-4 py-2 flex flex-col">
-          <h5 className="text-lg font-semibold text-zinc-800">
-            {product.title}
-          </h5>
-          <p className="text-neutral-600  line-clamp-1  text-sm">
-            {/* {product.description} */}
-            {product.manufacturer.name}
-          </p>
-        </div>
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        {product.serialNo}
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        {product.user}
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        {product.isPart ? "TRUE" : "FALSE"}
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        {product.rackMountable ? "TRUE" : "FALSE"}
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        {product.dateOfPurchase.split("T")[0]}
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        {product.model}
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        {product.warrantyMonths}
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        <Link
-          to={`history/${product._id}`}
-          className=" px-4 py-1 bg-neutral-800 text-slate-100 text-sm rounded-md hover:bg-neutral-600 hover:scale-95 transition-transform"
-        >
-          View
-        </Link>
-      </td>
-      <td className="px-4 py-2 text-neutral-700 font-semibold text-sm">
-        <NavLink
-        
-          to={user._id !== product.createdBy? "":`edit/${product._id}`}
-          className=" px-4 py-1 bg-neutral-800 text-slate-100 text-sm rounded-md hover:bg-neutral-600 hover:scale-95 transition-transform"
-        >
-          {user._id === product.createdBy ? "Edit" : "Action Not allowed"}
-        </NavLink>
-      </td>
-    </tr>
-  );
+	const [_, user] = useOutletContext();
+	const canEdit = user._id === product.createdBy;
+
+	return (
+		<tr className="hover:bg-slate-50 transition-colors duration-150">
+			<td className="px-6 py-4">
+				<div className="flex items-center">
+					<div className="flex-shrink-0 w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center mr-4">
+						<span className="text-sm font-medium text-teal-700">
+							{index + 1 + (currentPage - 1) * itemsPerPage}
+						</span>
+					</div>
+					<div>
+						<div className="text-sm font-medium text-slate-900">
+							{product.title}
+						</div>
+						<div className="text-sm text-slate-500">
+							{product.manufacturer.name}
+						</div>
+					</div>
+				</div>
+			</td>
+			<td className="px-6 py-4">
+				<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 font-mono">
+					{product.serialNo}
+				</span>
+			</td>
+			<td className="px-6 py-4 text-sm text-slate-900 capitalize">
+				{product.user}
+			</td>
+			<td className="px-6 py-4">
+				<div className="flex space-x-1">
+					{product.isPart ? (
+						<span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+							Part
+						</span>
+					) : (
+						<></>
+					)}
+					{product.rackMountable ? (
+						<span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+							Rack
+						</span>
+					) : (
+						<></>
+					)}
+				</div>
+			</td>
+			<td className="px-6 py-4 text-sm text-slate-900">
+				{product.dateOfPurchase.split("T")[0]}
+			</td>
+			<td className="px-6 py-4">
+				<span className="text-sm text-slate-900">
+					{product.warrantyMonths} months
+				</span>
+			</td>
+			<td className="px-6 py-4">
+				<Link
+					to={`history/${product._id}`}
+					className="inline-flex items-center px-3 py-1.5 border border-slate-300 rounded-md text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 transition-all duration-200"
+				>
+					View History
+				</Link>
+			</td>
+			<td className="px-6 py-4">
+				{canEdit ? (
+					<NavLink
+						to={`edit/${product._id}`}
+						className="inline-flex items-center px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-md transition-all duration-200"
+					>
+						Edit
+					</NavLink>
+				) : (
+					<span className="inline-flex items-center px-3 py-1.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-md cursor-not-allowed">
+						No Access
+					</span>
+				)}
+			</td>
+		</tr>
+	);
 }
 
 export default ProductsScreen;
- 
